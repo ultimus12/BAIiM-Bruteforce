@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Witaj</title>
+    <style>
+        /* Styl dla całej strony - taki sam jak na stronie logowania dla spójności */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+
+        /* Kontener z treścią */
+        .welcome-container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            box-sizing: border-box;
+        }
+
+        /* Nagłówek powitalny */
+        h2 {
+            color: #1c1c1e;
+            margin-bottom: 15px;
+            font-size: 28px;
+        }
+
+        /* Paragraf z tekstem */
+        p {
+            color: #3c3c3e;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+
+        /* Link "Wyloguj" stylizowany na przycisk */
+        a.logout-btn {
+            display: inline-block;
+            text-decoration: none;
+            padding: 12px 25px;
+            background-color: #dc3545; /* Czerwony kolor dla akcji wylogowania */
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        /* Efekt hover na przycisku */
+        a.logout-btn:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="welcome-container">
+        <h2>Witaj, {{ username }}!</h2>
+        <p>Jesteś pomyślnie zalogowany.</p>
+        <a href="/logout" class="logout-btn">Wyloguj</a>
+    </div>
+</body>
+</html>

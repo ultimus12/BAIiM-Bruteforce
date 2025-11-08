@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logowanie</title>
+    <style>
+        /* Styl dla całej strony */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* Kontener formularza */
+        .login-container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+
+        /* Nagłówek */
+        h2 {
+            text-align: center;
+            color: #1c1c1e;
+            margin-bottom: 25px;
+        }
+
+        /* Kontener dla etykiety i pola input */
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        /* Etykiety */
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #3c3c3e;
+            font-weight: 600;
+        }
+
+        /* Pola do wprowadzania tekstu i hasła */
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dcdce1;
+            border-radius: 6px;
+            box-sizing: border-box; /* Ważne dla zachowania szerokości */
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        /* Efekt focus na polach input */
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #007aff;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+        }
+
+        /* Przycisk logowania */
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007aff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        /* Efekt hover na przycisku */
+        button:hover {
+            background-color: #005ecb;
+        }
+
+        /* Styl dla komunikatu o błędzie */
+        .error {
+            color: #d93025;
+            background-color: #fbeae9;
+            border: 1px solid #fbd0ce;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>Zaloguj się</h2>
+        
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+        
+        <form method="POST" action="/login">
+            <div class="input-group">
+                <label for="username">Użytkownik:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="input-group">
+                <label for="password">Hasło:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <div>
+                <button type="submit">Zaloguj</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
