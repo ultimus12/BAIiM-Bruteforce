@@ -36,7 +36,7 @@ def init_db():
         cursor.execute("SELECT * FROM users WHERE username = 'user1'")
         if not cursor.fetchone():
             # Hashowanie hasła 'a2c'
-            hashed_password = generate_password_hash('a2c')
+            hashed_password = generate_password_hash('goy@')
             
             # Wstawienie użytkownika 'user1' z zahashowanym hasłem
             cursor.execute(
