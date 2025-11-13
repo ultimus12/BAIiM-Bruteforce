@@ -1,0 +1,1 @@
+{"timestamp": 1763055844.5767453, "datetime": "2025-11-13T18:44:04", "ip_address": "192.168.0.171", "endpoint": "/login", "attempted_username": "ultimus12", "result": "FAILURE", "reason": "Blad uzytkownika lub hasla", "delay_s": 3}
