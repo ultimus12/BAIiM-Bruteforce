@@ -2,15 +2,38 @@ import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
-import time # Utrzymano, aby wprowadzić opóźnienie po nieudanym logowaniu
+import time
+import logging
+import json
+from datetime import datetime
 
+# --- Konfiguracja Flask i Loggera ---
 app = Flask(__name__)
-# Klucz sesji jest potrzebny do przechowywania informacji o zalogowanym użytkowniku
 app.secret_key = os.urandom(24) 
-
 DATABASE = 'database.db'
 
-# --- Konfiguracja Bazy Danych ---
+LOG_DATETIME_FORMAT = '%Y%m%d_%H%M' 
+current_time_str = datetime.now().strftime(LOG_DATETIME_FORMAT)
+LOG_FILE = f'auth_attempts_{current_time_str}.jsonl'
+
+FAILURE_DELAY_SECONDS = 3 # Stała do opóźnienia
+
+# --- Ustawienie loggera, który zapisuje czyste linie JSON ---
+def setup_json_logger(log_filename):
+    log_formatter = logging.Formatter('%(message)s')
+    log_handler = logging.FileHandler(log_filename, mode='a')
+    log_handler.setFormatter(log_formatter)
+
+    logger = logging.getLogger('access_logger')
+    logger.setLevel(logging.INFO)
+    if not logger.handlers: # Zapobieganie podwójnemu dodawaniu handlerów
+        logger.addHandler(log_handler)
+    return logger
+
+access_logger = setup_json_logger(LOG_FILE)
+
+
+# --- Konfiguracja Bazy Danych (Zmienione hasło na 'aaay' zgodnie z notatkami) ---
 
 def get_db():
     """Nawiązuje połączenie z bazą danych."""
@@ -19,7 +42,7 @@ def get_db():
     return db
 
 def init_db():
-    """Tworzy tabelę użytkowników i dodaje użytkownika 'user1'."""
+    """Tworzy tabelę użytkowników i dodaje użytkownika 'user1' (hasło: 'aaay')."""
     with app.app_context():
         db = get_db()
         cursor = db.cursor()
@@ -36,7 +59,7 @@ def init_db():
         # Sprawdź, czy user1 już istnieje
         cursor.execute("SELECT * FROM users WHERE username = 'user1'")
         if not cursor.fetchone():
-            # Hashowanie hasła 'aaay' (ZMIENIONE)
+            # Hashowanie hasła 'aaay'
             hashed_password = generate_password_hash('aaay')
             
             # Wstawienie użytkownika 'user1' z zahashowanym hasłem
@@ -49,6 +72,7 @@ def init_db():
         db.commit()
         db.close()
 
+
 # --- Trasy (Routes) Aplikacji ---
 
 @app.route('/')
@@ -60,6 +84,7 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
+    delay = 0 # Domyślne opóźnienie
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -70,14 +95,37 @@ def login():
         user = cursor.fetchone()
         db.close()
 
+        # Przygotowanie danych do logowania
+        log_data = {
+            'timestamp': time.time(),
+            'datetime': time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime()),
+            'ip_address': request.remote_addr,
+            'endpoint': '/login',
+            'attempted_username': username,
+            'result': 'FAILURE',
+            'reason': 'Blad uzytkownika lub hasla', 
+            'delay_s': 0 # Wartość tymczasowa
+        }
+
         if user and check_password_hash(user['password_hash'], password):
-            # Logowanie pomyślne: zapisz użytkownika w sesji
+            # Logowanie pomyślne
+            log_data['result'] = 'SUCCESS'
+            log_data['reason'] = 'Login successful'
             session['username'] = user['username']
-            return redirect(url_for('witaj'))
+            
         else:
-            # Logowanie niepomyślne - Wprowadź opóźnienie 3 sekundy
-            time.sleep(3) # <--- Opóźnienie 3 sekundy
-            error = 'Blad uzytkownika lub hasla'
+            # Logowanie niepomyślne - Wprowadź opóźnienie
+            delay = FAILURE_DELAY_SECONDS
+            time.sleep(delay) 
+            error = log_data['reason']
+        
+        log_data['delay_s'] = delay # Zapisz rzeczywiste opóźnienie
+
+        # Zapis logu w formacie JSON Lines
+        access_logger.info(json.dumps(log_data))
+
+        if log_data['result'] == 'SUCCESS':
+             return redirect(url_for('witaj'))
 
     return render_template('login.html', error=error)
 

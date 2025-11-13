@@ -2,15 +2,36 @@ import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
+import logging
+import json
+import time
+from datetime import datetime
 
+# --- Konfiguracja Flask i Loggera ---
 app = Flask(__name__)
-# Klucz sesji jest potrzebny do przechowywania informacji o zalogowanym użytkowniku
 app.secret_key = os.urandom(24) 
-
 DATABASE = 'database.db'
 
-# --- Konfiguracja Bazy Danych ---
+LOG_DATETIME_FORMAT = '%Y%m%d_%H%M' 
+current_time_str = datetime.now().strftime(LOG_DATETIME_FORMAT)
+LOG_FILE = f'auth_attempts_{current_time_str}.jsonl'
 
+# --- Ustawienie loggera, który zapisuje czyste linie JSON ---
+def setup_json_logger(log_filename):
+    log_formatter = logging.Formatter('%(message)s')
+    log_handler = logging.FileHandler(log_filename, mode='a')
+    log_handler.setFormatter(log_formatter)
+
+    logger = logging.getLogger('access_logger')
+    logger.setLevel(logging.INFO)
+    if not logger.handlers:
+        logger.addHandler(log_handler)
+    return logger
+
+access_logger = setup_json_logger(LOG_FILE)
+
+
+# --- Konfiguracja Bazy Danych ---
 def get_db():
     """Nawiązuje połączenie z bazą danych."""
     db = sqlite3.connect(DATABASE)
@@ -18,7 +39,7 @@ def get_db():
     return db
 
 def init_db():
-    """Tworzy tabelę użytkowników i dodaje użytkownika 'user1'."""
+    """Tworzy tabelę użytkowników i dodaje użytkownika 'user1' (hasło: 'a2c')."""
     with app.app_context():
         db = get_db()
         cursor = db.cursor()
@@ -48,6 +69,7 @@ def init_db():
         db.commit()
         db.close()
 
+
 # --- Trasy (Routes) Aplikacji ---
 
 @app.route('/')
@@ -68,15 +90,41 @@ def login():
         cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
         user = cursor.fetchone()
         db.close()
-        if user and check_password_hash(user['password_hash'], password):
-            # Logowanie pomyślne: zapisz użytkownika w sesji
-            session['username'] = user['username']
-            return redirect(url_for('witaj'))
-        elif not user:
-            error = 'Nie ma takiego uzytkownika'
-        else:
-            error = 'Nieprawidlowe haslo'
 
+        # Przygotowanie danych do logowania
+        log_data = {
+            'timestamp': time.time(),
+            'datetime': time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime()),
+            'ip_address': request.remote_addr,
+            'endpoint': '/login',
+            'attempted_username': username,
+            'result': 'FAILURE',
+            'reason': '',
+            'delay_s': 0 
+        }
+
+        if user and check_password_hash(user['password_hash'], password):
+            # Logowanie pomyślne
+            log_data['result'] = 'SUCCESS'
+            log_data['reason'] = 'Login successful'
+            session['username'] = user['username']
+            
+        elif not user:
+            # Logowanie błędu: brak użytkownika (różnicowanie)
+            log_data['reason'] = 'Nie ma takiego uzytkownika'
+            error = log_data['reason']
+            
+        else:
+            # Logowanie błędu: nieprawidłowe hasło (różnicowanie)
+            log_data['reason'] = 'Nieprawidlowe haslo'
+            error = log_data['reason']
+
+        # Zapis logu w formacie JSON Lines
+        access_logger.info(json.dumps(log_data))
+
+        if log_data['result'] == 'SUCCESS':
+             return redirect(url_for('witaj'))
+        
     return render_template('login.html', error=error)
 
 @app.route('/witaj')

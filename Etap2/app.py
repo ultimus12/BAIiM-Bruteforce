@@ -2,15 +2,36 @@ import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
+import logging
+import json
+import time
+from datetime import datetime
 
+# --- Konfiguracja Flask i Loggera ---
 app = Flask(__name__)
-# Klucz sesji jest potrzebny do przechowywania informacji o zalogowanym użytkowniku
 app.secret_key = os.urandom(24) 
-
 DATABASE = 'database.db'
 
-# --- Konfiguracja Bazy Danych ---
+LOG_DATETIME_FORMAT = '%Y%m%d_%H%M' 
+current_time_str = datetime.now().strftime(LOG_DATETIME_FORMAT)
+LOG_FILE = f'auth_attempts_{current_time_str}.jsonl'
 
+# --- Ustawienie loggera, który zapisuje czyste linie JSON ---
+def setup_json_logger(log_filename):
+    log_formatter = logging.Formatter('%(message)s')
+    log_handler = logging.FileHandler(log_filename, mode='a')
+    log_handler.setFormatter(log_formatter)
+
+    logger = logging.getLogger('access_logger')
+    logger.setLevel(logging.INFO)
+    if not logger.handlers: # Zapobieganie podwójnemu dodawaniu handlerów
+        logger.addHandler(log_handler)
+    return logger
+
+access_logger = setup_json_logger(LOG_FILE)
+
+
+# --- Konfiguracja Bazy Danych (Zmienione hasło na 'goy@' zgodnie z notatkami) ---
 def get_db():
     """Nawiązuje połączenie z bazą danych."""
     db = sqlite3.connect(DATABASE)
@@ -18,7 +39,7 @@ def get_db():
     return db
 
 def init_db():
-    """Tworzy tabelę użytkowników i dodaje użytkownika 'user1'."""
+    """Tworzy tabelę użytkowników i dodaje użytkownika 'user1' (hasło: 'goy@')."""
     with app.app_context():
         db = get_db()
         cursor = db.cursor()
@@ -35,7 +56,7 @@ def init_db():
         # Sprawdź, czy user1 już istnieje
         cursor.execute("SELECT * FROM users WHERE username = 'user1'")
         if not cursor.fetchone():
-            # Hashowanie hasła 'a2c'
+            # Hashowanie hasła 'goy@'
             hashed_password = generate_password_hash('goy@')
             
             # Wstawienie użytkownika 'user1' z zahashowanym hasłem
@@ -43,13 +64,13 @@ def init_db():
                 "INSERT INTO users (username, password_hash) VALUES (?, ?)",
                 ('user1', hashed_password)
             )
-            print("Utworzono użytkownika 'user1' z hasłem 'a2c'.")
+            # Uwaga: Zmieniam komunikat na 'goy@' aby odzwierciedlał hasło z Twoich notatek, a nie 'a2c'
+            print("Utworzono użytkownika 'user1' z hasłem 'goy@'.") 
         
         db.commit()
         db.close()
 
 # --- Trasy (Routes) Aplikacji ---
-
 @app.route('/')
 def index():
     if 'username' in session:
@@ -69,13 +90,33 @@ def login():
         user = cursor.fetchone()
         db.close()
 
+        # Przygotowanie danych do logowania
+        log_data = {
+            'timestamp': time.time(),
+            'datetime': time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime()),
+            'ip_address': request.remote_addr,
+            'endpoint': '/login',
+            'attempted_username': username,
+            'result': 'FAILURE',
+            'reason': 'Blad uzytkownika lub hasla', # Ogólny komunikat błędu
+            'delay_s': 0 
+        }
+
         if user and check_password_hash(user['password_hash'], password):
-            # Logowanie pomyślne: zapisz użytkownika w sesji
+            # Logowanie pomyślne
+            log_data['result'] = 'SUCCESS'
+            log_data['reason'] = 'Login successful'
             session['username'] = user['username']
-            return redirect(url_for('witaj'))
+            
         else:
-            # Logowanie niepomyślne
-            error = 'Blad uzytkownika lub hasla'
+            # Logowanie błędu: Ogólny błąd
+            error = log_data['reason']
+
+        # Zapis logu w formacie JSON Lines
+        access_logger.info(json.dumps(log_data))
+        
+        if log_data['result'] == 'SUCCESS':
+             return redirect(url_for('witaj'))
 
     return render_template('login.html', error=error)
 
@@ -92,5 +133,5 @@ def logout():
 
 # Uruchomienie inicjalizacji bazy danych
 if __name__ == '__main__':
-    init_db() # Stwórz bazę i użytkownika przy pierwszym uruchomieniu
+    init_db() 
     app.run(debug=True, port=5000, host='0.0.0.0') # Uruchom serwer Flask
