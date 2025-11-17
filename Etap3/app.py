@@ -41,37 +41,6 @@ def get_db():
     db.row_factory = sqlite3.Row
     return db
 
-def init_db():
-    """Tworzy tabelę użytkowników i dodaje użytkownika 'user1' (hasło: 'aaay')."""
-    with app.app_context():
-        db = get_db()
-        cursor = db.cursor()
-        
-        # Stwórz tabelę, jeśli nie istnieje
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT NOT NULL UNIQUE,
-                password_hash TEXT NOT NULL
-            );
-        ''')
-        
-        # Sprawdź, czy user1 już istnieje
-        cursor.execute("SELECT * FROM users WHERE username = 'user1'")
-        if not cursor.fetchone():
-            # Hashowanie hasła 'aaay'
-            hashed_password = generate_password_hash('aaay')
-            
-            # Wstawienie użytkownika 'user1' z zahashowanym hasłem
-            cursor.execute(
-                "INSERT INTO users (username, password_hash) VALUES (?, ?)",
-                ('user1', hashed_password)
-            )
-            print("Utworzono użytkownika 'user1' z hasłem 'aaay'.")
-        
-        db.commit()
-        db.close()
-
 
 # --- Trasy (Routes) Aplikacji ---
 
@@ -144,5 +113,6 @@ def logout():
 if __name__ == '__main__':
     # Ważne: Jeśli baza danych już istnieje, musisz ją usunąć (plik database.db),
     # aby zainicjalizować nowego użytkownika z hasłem 'aaay' przy ponownym uruchomieniu serwera.
-    init_db() 
+    
+
     app.run(debug=True, port=5000, host='0.0.0.0') # Uruchom serwer Flask
