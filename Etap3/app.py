@@ -32,9 +32,6 @@ def setup_json_logger(log_filename):
 
 access_logger = setup_json_logger(LOG_FILE)
 
-
-# --- Konfiguracja Bazy Danych (Zmienione hasło na 'aaay' zgodnie z notatkami) ---
-
 def get_db():
     """Nawiązuje połączenie z bazą danych."""
     db = sqlite3.connect(DATABASE)
@@ -116,3 +113,4 @@ if __name__ == '__main__':
     
 
     app.run(debug=True, port=5000, host='0.0.0.0') # Uruchom serwer Flask
+
