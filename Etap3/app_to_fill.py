@@ -16,7 +16,6 @@ LOG_DATETIME_FORMAT = '%Y%m%d_%H%M'
 current_time_str = datetime.now().strftime(LOG_DATETIME_FORMAT)
 LOG_FILE = f'auth_attempts_{current_time_str}.jsonl'
 
-# USUNIĘTO: FAILURE_DELAY_SECONDS = 3
 
 # --- Ustawienie loggera, który zapisuje czyste linie JSON ---
 def setup_json_logger(log_filename):
@@ -80,8 +79,6 @@ def login():
             session['username'] = user['username']
             
         else:
-            # Logowanie niepomyślne - Wprowadź opóźnienie
-            # TODO: TUTAJ WPROWADŹ MECHANIZM OPÓŹNIENIA
             error = log_data['reason']
         
         log_data['delay_s'] = delay # Zapisz rzeczywiste opóźnienie (obecnie 0, chyba że zaimplementujesz opóźnienie)
@@ -112,5 +109,6 @@ if __name__ == '__main__':
     # poprawnego działania aplikacji. Zakładamy, że jest on w innym pliku
     # lub został usunięty celowo.
     
+
 
     app.run(debug=True, port=5000, host='0.0.0.0') # Uruchom serwer Flask
