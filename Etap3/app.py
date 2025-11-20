@@ -109,8 +109,9 @@ def logout():
 # Uruchomienie inicjalizacji bazy danych
 if __name__ == '__main__':
     # Ważne: Jeśli baza danych już istnieje, musisz ją usunąć (plik database.db),
-    # aby zainicjalizować nowego użytkownika z hasłem 'aaay' przy ponownym uruchomieniu serwera.
+    
     
 
     app.run(debug=True, port=5000, host='0.0.0.0') # Uruchom serwer Flask
+
 
